@@ -1,81 +1,83 @@
-# Fiquem a vontade para editar como quiserem funciona tanto windows quanato Linux
-import os
-import time
-import platform
-import psutil
+package main
 
-def limpar_cache_linux():
-    try:
-        #  de memória livre antes da limpeza
-        mem_before = psutil.virtual_memory().available / (1024 * 1024)
-        
-        os.system('sync')
-        os.system('echo 3 > /proc/sys/vm/drop_caches')
-        os.system('swapoff -a && swapon -a')
-        
-        #  memória livre após a limpeza
-        mem_after = psutil.virtual_memory().available / (1024 * 1024)
-        
-        print(f"Cache e memória limpos com sucesso! Memória antes: {mem_before:.2f} MB, Memória depois: {mem_after:.2f} MB")
-        return True
-    except Exception as e:
-        print("Erro ao limpar cache e memória:", e)
-        return False
+import (
+	"fmt"
+	"os/exec"
+	"runtime"
+	"time"
+)
 
-def limpar_cache_windows():
-    try:
-        os.system('echo Limpar cache e memória no Windows')
-        # Comando para limpar cache e memória no Windows
-        print("Cache e memória limpos com sucesso!")
-        return True
-    except Exception as e:
-        print("Erro ao limpar cache e memória no Windows:", e)
-        return False
+func executarComando(comando string) error {
+	cmd := exec.Command("bash", "-c", comando)
+	return cmd.Run()
+}
 
-def otimizar_desempenho_linux():
-    try:
-        os.system('sysctl -w vm.swappiness=10')
-        os.system('sysctl -w vm.vfs_cache_pressure=50')
-        os.system('sysctl -w kernel.nmi_watchdog=0')
-        print("Desempenho do sistema otimizado!")
-        return True
-    except Exception as e:
-        print("Erro ao otimizar desempenho:", e)
-        return False
+func limparCacheLinux() error {
+	if err := executarComando("sync"); err != nil {
+		return err
+	}
+	return executarComando("echo 3 > /proc/sys/vm/drop_caches")
+}
 
-def otimizar_desempenho_windows():
-    try:
-        os.system('echo Otimizar desempenho no Windows')
-        # Comandos para otimizar desempenho no Windows
-        print("Desempenho do sistema otimizado!")
-        return True
-    except Exception as e:
-        print("Erro ao otimizar desempenho no Windows:", e)
-        return False
+func otimizarDesempenhoLinux() error {
+	cmds := []string{
+		"sysctl -w vm.swappiness=10",
+		"sysctl -w vm.vfs_cache_pressure=50",
+		"sysctl -w kernel.nmi_watchdog=0",
+	}
+	for _, cmd := range cmds {
+		if err := executarComando(cmd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-def contagem_regressiva(segundos):
-    for i in range(segundos, 0, -1):
-        print(f"Próxima execução em {i} segundos...", end="\r")
-        time.sleep(1)
+func limparCacheWindows() error {
+	fmt.Println("Limpar cache e memória no Windows.")
+	return nil
+}
 
-if __name__ == "__main__":
-    while True:
-        print("\nExecutando a limpeza de cache e memória...")
-        
-        if platform.system() == "Linux":
-            if limpar_cache_linux() and otimizar_desempenho_linux():
-                contagem_regressiva(60)  # Contagem regressiva de 60 segundos
-            else:
-                print("Falha ao executar a limpeza e otimização. Tentando novamente em 60 segundos...")
-                contagem_regressiva(60)
-        
-        elif platform.system() == "Windows":
-            if limpar_cache_windows() and otimizar_desempenho_windows():
-                contagem_regressiva(60)  # Contagem regressiva de 60 segundos
-            else:
-                print("Falha ao executar a limpeza e otimização. Tentando novamente em 60 segundos...")
-                contagem_regressiva(60)
-        
-        else:
-            print(f"Sistema operacional '{platform.system()}' não suportado.")
-            break
+func otimizarDesempenhoWindows() error {
+	fmt.Println("Otimizar desempenho no Windows.")
+	return nil
+}
+
+func contagemRegressiva(segundos int) {
+	for i := segundos; i > 0; i-- {
+		fmt.Printf("Próxima execução em %d segundos...\r", i)
+		time.Sleep(1 * time.Second)
+	}
+	fmt.Println()
+}
+
+func main() {
+	for {
+		fmt.Println("\nExecutando a limpeza de cache e memória...")
+
+		var err error
+		switch runtime.GOOS {
+		case "linux":
+			err = limparCacheLinux()
+			if err == nil {
+				err = otimizarDesempenhoLinux()
+			}
+		case "windows":
+			err = limparCacheWindows()
+			if err == nil {
+				err = otimizarDesempenhoWindows()
+			}
+		default:
+			fmt.Printf("Sistema operacional '%s' não suportado.\n", runtime.GOOS)
+			return
+		}
+
+		if err != nil {
+			fmt.Printf("Erro: %v\n", err)
+		} else {
+			fmt.Println("Cache e desempenho otimizados com sucesso!")
+		}
+
+		contagemRegressiva(60)
+	}
+}
